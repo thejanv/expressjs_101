@@ -58,6 +58,7 @@ app.get("/api/users/:id", (req, res) => {
   return res.send(foundUser);
 });
 
+// Create a user
 app.post("/api/users", (req, res) => {
   console.log(req.body);
   const newUser = {
@@ -66,6 +67,26 @@ app.post("/api/users", (req, res) => {
   };
   mockUsers.push(newUser);
   return res.status(201).send(newUser);
+});
+
+// Update a user complete record
+app.put("/api/users/:id", (req, res) => {
+  const {
+    body,
+    params: { id },
+  } = req;
+
+  const parseID = parseInt(id);
+
+  if (isNaN(parseID)) return res.sendStatus(400);
+
+  const findUserIndex = mockUsers.findIndex((user) => user.id === parseID);
+
+  if (findUserIndex === -1) return res.sendStatus(404);
+
+  mockUsers[findUserIndex] = { id: parseID, ...body };
+
+  return res.sendStatus(200);
 });
 
 app.get("/api/products", (req, res) => {
