@@ -6,6 +6,24 @@ app.use(express.json());
 
 const port = process.env.PORT || 3000;
 
+// UserId resovlve middleware
+const resolveIndexById = (req, res, next) => {
+  const {
+    body,
+    params: { id },
+  } = req;
+
+  const parseID = parseInt(id);
+
+  if (isNaN(parseID)) return res.sendStatus(400);
+
+  const findUserIndex = mockUsers.findIndex((user) => user.id === parseID);
+  console.log(findUserIndex);
+  if (findUserIndex === -1) return res.sendStatus(404);
+  req.findUserIndex = findUserIndex;
+  next();
+};
+
 const mockUsers = [
   {
     id: 101,
@@ -29,10 +47,12 @@ const mockUsers = [
   },
 ];
 
+// Base URL for API
 app.get("/", (req, res) => {
   res.status(201).send({ msg: "Hello" });
 });
 
+// Get all users
 app.get("/api/users", (req, res) => {
   const {
     query: { filter, value },
@@ -44,17 +64,10 @@ app.get("/api/users", (req, res) => {
   return res.send(mockUsers);
 });
 
-app.get("/api/users/:id", (req, res) => {
-  const parseID = parseInt(req.params.id);
-  console.log(parseID);
-  if (isNaN(parseID)) {
-    return res.status(400).send({ msg: "Bad request invalid Id" });
-  }
-  const foundUser = mockUsers.find((user) => user.id === parseID);
-  console.log(foundUser);
-  if (!foundUser) {
-    return res.sendStatus(404);
-  }
+// Get given id user
+app.get("/api/users/:id", resolveIndexById, (req, res) => {
+  const { findUserIndex } = req;
+  const foundUser = mockUsers[findUserIndex];
   return res.send(foundUser);
 });
 
@@ -70,52 +83,22 @@ app.post("/api/users", (req, res) => {
 });
 
 // Update a user complete record
-app.put("/api/users/:id", (req, res) => {
-  const {
-    body,
-    params: { id },
-  } = req;
-
-  const parseID = parseInt(id);
-
-  if (isNaN(parseID)) return res.sendStatus(400);
-
-  const findUserIndex = mockUsers.findIndex((user) => user.id === parseID);
-
-  if (findUserIndex === -1) return res.sendStatus(404);
-
-  mockUsers[findUserIndex] = { id: parseID, ...body };
-
+app.put("/api/users/:id", resolveIndexById, (req, res) => {
+  const { body, findUserIndex } = req;
+  mockUsers[findUserIndex] = { id: mockUsers[findUserIndex].id, ...body };
   return res.sendStatus(200);
 });
 
 // Update a user partial data
-app.patch("/api/users/id", (req, res) => {
-  const {
-    body,
-    params: { id },
-  } = req;
-
-  const parseID = parseInt(id);
-
-  if (isNaN(parseID)) return res.sendStatus(400);
-
-  const findUserIndex = mockUsers.findIndex((user) => user.id === parseID);
-
-  if (findUserIndex === -1) return res.sendStatus(404);
-
+app.patch("/api/users/:id", resolveIndexById, (req, res) => {
+  const { body, findUserIndex } = req;
   mockUsers[findUserIndex] = { ...mockUsers[findUserIndex], ...body };
-
   return res.sendStatus(200);
 });
 
 // Delete a user
-app.delete("/api/users/:id", (req, res) => {
-  const { id } = req.params;
-  const parseID = parseInt(id);
-  if (isNaN(parseID)) return res.sendStatus(400);
-  const findUserIndex = mockUsers.findIndex((user) => user.id === parseID);
-  if (findUserIndex === -1) return res.sendStatus(404);
+app.delete("/api/users/:id", resolveIndexById, (req, res) => {
+  const { findUserIndex } = req;
   mockUsers.splice(findUserIndex, 1);
   return res.sendStatus(200);
 });
