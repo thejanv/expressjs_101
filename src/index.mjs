@@ -89,6 +89,26 @@ app.put("/api/users/:id", (req, res) => {
   return res.sendStatus(200);
 });
 
+// Update a user partial data
+app.patch("/api/users/id", (req, res) => {
+  const {
+    body,
+    params: { id },
+  } = req;
+
+  const parseID = parseInt(id);
+
+  if (isNaN(parseID)) return res.sendStatus(400);
+
+  const findUserIndex = mockUsers.findIndex((user) => user.id === parseID);
+
+  if (findUserIndex === -1) return res.sendStatus(404);
+
+  mockUsers[findUserIndex] = { ...mockUsers[findUserIndex], ...body };
+
+  return res.sendStatus(200);
+});
+
 app.get("/api/products", (req, res) => {
   res.send([
     {
