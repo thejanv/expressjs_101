@@ -1,5 +1,13 @@
 import express from "express";
-
+import {
+  query,
+  validationResult,
+  body,
+  matchedData,
+  checkSchema,
+} from "express-validator";
+import { createUserValidationSchema } from "./utils/validationSchemas.mjs";
+console.log("working");
 const app = express();
 
 app.use(express.json());
@@ -53,16 +61,26 @@ app.get("/", (req, res) => {
 });
 
 // Get all users
-app.get("/api/users", (req, res) => {
-  const {
-    query: { filter, value },
-  } = req;
-
-  if (filter && value) {
-    return res.send(mockUsers.filter((user) => user[filter].includes(value)));
+app.get(
+  "/api/users",
+  // query("filter")
+  //   .notEmpty()
+  //   .isLength({ min: 3, max: 10 })
+  //   .withMessage("Must be at least 3-10 characters"),
+  (req, res) => {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      return res.status(400).send({ errors: result.array() });
+    }
+    const {
+      query: { filter, value },
+    } = req;
+    if (filter && value) {
+      return res.send(mockUsers.filter((user) => user[filter].includes(value)));
+    }
+    return res.send(mockUsers);
   }
-  return res.send(mockUsers);
-});
+);
 
 // Get given id user
 app.get("/api/users/:id", resolveIndexById, (req, res) => {
@@ -72,11 +90,15 @@ app.get("/api/users/:id", resolveIndexById, (req, res) => {
 });
 
 // Create a user
-app.post("/api/users", (req, res) => {
-  console.log(req.body);
+app.post("/api/users", checkSchema(createUserValidationSchema), (req, res) => {
+  const result = validationResult(req);
+  if (!result.isEmpty()) {
+    return res.status(400).send({ errors: result.array() });
+  }
+  const data = matchedData(req);
   const newUser = {
     id: mockUsers[mockUsers.length - 1] + 1,
-    ...req.body,
+    ...data,
   };
   mockUsers.push(newUser);
   return res.status(201).send(newUser);
