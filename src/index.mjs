@@ -2,10 +2,10 @@ import express from "express";
 import routes from "./routes/index.mjs";
 import cookieParser from "cookie-parser";
 import session from "express-session";
-import { mockUsers } from "./utils/constants.mjs";
+import passport from "passport";
+import "./auth/local-strategy.mjs";
 
 const app = express();
-
 app.use(express.json());
 app.use(cookieParser("helloworld"));
 app.use(
@@ -18,12 +18,14 @@ app.use(
     },
   })
 );
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use("/api", routes);
 
 app.get("/", (req, res) => {
   req.session.visited = true;
-  console.log(req.session);
-  console.log(req.sessionID);
   res.cookie("hello", "world", { maxAge: 10000, signed: true }).sendStatus(200);
 });
 
@@ -33,20 +35,23 @@ app.listen(port, () => {
   console.info(`Running on port ${port}`);
 });
 
-app.post("/api/auth", (req, res) => {
-  const {
-    body: { username, password },
-  } = req;
-  const findUser = mockUsers.find((user) => user.username === username);
-  if (!findUser || findUser.password !== password) return res.sendStatus(401);
-  req.session.user = findUser;
-  return res.status(200).send(findUser);
+app.post("/api/auth", passport.authenticate("local"), (req, res) => {
+  return res.sendStatus(200);
 });
 
 app.get("/api/auth/status", (req, res) => {
-  return req.session.user
+  return req.user
     ? res.status(200).send(req.session.user)
     : res.sendStatus(401);
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  if (!req.user) return res.sendStatus(401);
+
+  req.logout((err) => {
+    if (err) res.sendStatus(400);
+    return res.sendStatus(200);
+  });
 });
 
 app.post("/api/cart", (req, res) => {
