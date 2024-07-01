@@ -3,9 +3,17 @@ import routes from "./routes/index.mjs";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import passport from "passport";
+import mongoose from "mongoose";
 import "./auth/local-strategy.mjs";
 
 const app = express();
+
+mongoose
+  .connect(
+    `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.saf9bhx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+  )
+  .then(() => console.info("Connected to db"))
+  .catch((err) => console.error(err));
 app.use(express.json());
 app.use(cookieParser("helloworld"));
 app.use(

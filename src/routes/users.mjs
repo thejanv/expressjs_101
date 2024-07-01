@@ -7,6 +7,7 @@ import {
 } from "express-validator";
 import { mockUsers } from "../utils/constants.mjs";
 import { createUserValidationSchema } from "../utils/validationSchemas.mjs";
+import { User } from "../mongoose/schemas/user.mjs";
 import { resolveIndexById } from "../utils/middlewares.mjs";
 
 const router = Router();
@@ -40,18 +41,20 @@ router.get("/:id", resolveIndexById, (req, res) => {
 });
 
 // Create a user
-router.post("", checkSchema(createUserValidationSchema), (req, res) => {
+router.post("", checkSchema(createUserValidationSchema), async (req, res) => {
   const result = validationResult(req);
   if (!result.isEmpty()) {
-    return res.status(400).send({ errors: result.array() });
+    return res.status(400).send(result.array());
   }
   const data = matchedData(req);
-  const newUser = {
-    id: mockUsers[mockUsers.length - 1].id + 1,
-    ...data,
-  };
-  mockUsers.push(newUser);
-  return res.status(201).send(newUser);
+  const newUser = new User(data);
+  try {
+    const saveUser = await newUser.save();
+    return res.status(201).send(saveUser);
+  } catch (err) {
+    // console.error(err);
+    return res.sendStatus(400);
+  }
 });
 
 // Update a user complete record
