@@ -48,9 +48,7 @@ app.post("/api/auth", passport.authenticate("local"), (req, res) => {
 });
 
 app.get("/api/auth/status", (req, res) => {
-  return req.user
-    ? res.status(200).send(req.session.user)
-    : res.sendStatus(401);
+  return req.user ? res.status(200).send(req.user) : res.sendStatus(401);
 });
 
 app.post("/api/auth/logout", (req, res) => {
